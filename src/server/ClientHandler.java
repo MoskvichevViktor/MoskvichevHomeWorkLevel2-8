@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import static server.AuthService.*;
+
 public class ClientHandler {
 
     private ConsoleServer server;
@@ -15,8 +17,10 @@ public class ClientHandler {
     private DataInputStream in;
     private String nickname;
 
+
+
     // черный список у пользователя, а не у сервера
-    List<String> blackList;
+    //List<String> blackList;
 
     public ClientHandler(ConsoleServer server, Socket socket) {
         try {
@@ -24,7 +28,7 @@ public class ClientHandler {
             this.socket = socket;
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
-            this.blackList = new ArrayList<>();
+            //this.blackList = new ArrayList<>();
 
             new Thread(() -> {
                 boolean isExit = false;
@@ -49,8 +53,22 @@ public class ClientHandler {
                         }
                         // регистрация
                         if (str.startsWith("/signup ")) {
+                            //timeout
+                            long start= System.currentTimeMillis();
+
                             String[] tokens = str.split(" ");
                             int result = AuthService.addUser(tokens[1], tokens[2], tokens[3]);
+
+
+                            long timeoutInMillis = 1000L * 120;
+                            long finish = System.currentTimeMillis();
+                            if((finish-start) < timeoutInMillis){
+                                sendMsg("Время на регистрацию истекло!");
+
+                                socket.isClosed();
+                                break;
+                                }
+
                             if (result > 0) {
                                 sendMsg("Successful registration");
                             } else {
@@ -76,14 +94,14 @@ public class ClientHandler {
                                     break;
                                 }
                                 // вторая часть ДЗ. выполнение
-                                if (str.startsWith("@")) {
+                                if (str.startsWith("@") ) {
                                     String[] tokens = str.split(" ", 2);
                                     server.sendPrivateMsg(this, tokens[0].substring(1), tokens[1]);
                                 }
-                                // черный список для пользователя. но пока что только в рамках одного запуска программы
+                                // черный список для пользователя.
                                 if (str.startsWith("/blacklist ")) {
                                     String[] tokens = str.split(" ");
-                                    blackList.add(tokens[1]);
+                                    addBlacklist(tokens[1]);
                                     sendMsg("You added " + tokens[1] + " to blacklist");
                                 }
                             } else {
@@ -121,6 +139,7 @@ public class ClientHandler {
     public void sendMsg(String msg) {
         try {
             out.writeUTF(msg);
+            addMsg(msg);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -135,6 +154,8 @@ public class ClientHandler {
     }
 
     public boolean checkBlackList(String nickname) {
-        return blackList.contains(nickname);
+        if(getNicknameByBlacklist(nickname) != null){
+            return true;
+        }else return false;
     }
 }
