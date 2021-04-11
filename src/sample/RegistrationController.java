@@ -13,6 +13,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+
+
 public class RegistrationController {
     @FXML
     public TextField login;
@@ -25,6 +27,8 @@ public class RegistrationController {
     @FXML
     public Button signupBtn;
 
+
+
     public void signUp(ActionEvent actionEvent) {
         if ("Sign Up".equals(signupBtn.getText())) {
             Socket socket = null;
@@ -32,21 +36,27 @@ public class RegistrationController {
             DataInputStream in = null;
             String result = null;
 
+
             try {
+
                 socket = new Socket(Controller.ADDRESS, Controller.PORT);
                 out = new DataOutputStream(socket.getOutputStream());
                 in = new DataInputStream(socket.getInputStream());
                 out.writeUTF("/signup " + login.getText() + " " + password.getText() + " " + nickname.getText());
                 result = in.readUTF();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
+
             resultLabel.setText(result);
             resultLabel.setVisible(true);
+
             if (resultLabel.getText().contains("Successful registration")) {
                 signupBtn.setText("Exit");
             }
+
         } else {
             exitSignup();
         }

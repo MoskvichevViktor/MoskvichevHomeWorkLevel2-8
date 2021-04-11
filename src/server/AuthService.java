@@ -30,6 +30,32 @@ public class AuthService {
         return 0;
     }
 
+    public static int addBlacklist(String nickname) {
+        try {
+            String queryBlacklist = "INSERT INTO blacklist (nickname) VALUES (?);";
+            PreparedStatement ps = connection.prepareStatement(queryBlacklist);
+            ps.setString(1, nickname);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    public static int addMsg(String Msg) {
+        try {
+            String queryMsg = "INSERT INTO Msg (Msg) VALUES (?);";
+            PreparedStatement ps = connection.prepareStatement(queryMsg);
+            ps.setString(1, Msg);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+
+
+
     public static String getNicknameByLoginAndPass(String login, String pass) {
         String query = String.format("select nickname, password from users where login='%s'", login);
         try {
@@ -57,5 +83,20 @@ public class AuthService {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+
+    public static String getNicknameByBlacklist(String nickname) {
+        String queryBlacklist = String.format("select nickname from blacklist where nickname='%s'", nickname);
+        try {
+            ResultSet rs = statement.executeQuery(queryBlacklist); // возвращает выборку через select
+
+            if (rs.next()) {
+                String nick = rs.getString(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
