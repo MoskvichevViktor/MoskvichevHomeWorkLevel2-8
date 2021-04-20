@@ -8,9 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
@@ -122,7 +120,13 @@ public class Controller implements Initializable {
                         String str = in.readUTF();
                         if ("/auth-OK".equals(str)) {
                             setAuthorized(true);
-                            chatArea.clear();
+                            ////2. После загрузки клиента показывать ему последние 100 строк чата.
+                            try {
+                                loadHistory();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
                             break;
                         } else {
                             for (TextArea ta : textAreas) {
@@ -149,6 +153,8 @@ public class Controller implements Initializable {
                             });
                         } else {
                             chatArea.appendText(str + "\n");
+                            ////1. Добавить в сетевой чат запись локальной истории в текстовый файл на клиенте.
+                            saveHistory();
                         }
                     }
                 } catch (IOException e) {
@@ -174,8 +180,8 @@ public class Controller implements Initializable {
         }
         try {
             out.writeUTF("/auth " + loginField.getText() + " " + passwordField.getText());
-            loginField.clear();
-            passwordField.clear();
+            //loginField.clear();
+            //passwordField.clear();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -216,4 +222,54 @@ public class Controller implements Initializable {
         RegistrationStage rs = new RegistrationStage(out);
         rs.show();
     }
+
+    //1. Добавить в сетевой чат запись локальной истории в текстовый файл на клиенте.
+    // Для каждой учетной записи файл
+    // с историей должен называться history_[login].txt. (Например, history_login1.txt,
+    // history_user111.txt)
+    String getFileName(){
+        return String.format("history_[%s]", loginField.getText());
+    }
+
+    private void saveHistory() throws IOException {
+        try {
+            File history = new File("src/"+getFileName()+".txt");
+            if (!history.exists()) {
+                history.createNewFile();
+            }
+            PrintWriter fileWriter = new PrintWriter(new FileWriter(history, true));
+
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            bufferedWriter.write(chatArea.getText());
+            bufferedWriter.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    //2. После загрузки клиента показывать ему последние 100 строк чата.
+    private void loadHistory() throws IOException {
+        int posHistory = 100;
+        File history = new File("src/"+getFileName()+".txt");
+        ArrayList<String> historyList = new ArrayList<>();
+        FileInputStream in = new FileInputStream(history);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
+
+        String temp;
+        while ((temp = bufferedReader.readLine()) != null) {
+            historyList.add(temp);
+        }
+
+        if (historyList.size() > posHistory) {
+            for (int i = historyList.size() - posHistory; i <= (historyList.size() - 1); i++) {
+                chatArea.appendText(historyList.get(i) + "\n");
+            }
+        } else {
+            for (int i = 0; i < historyList.size(); i++) {
+                chatArea.appendText(historyList.get(i) + "\n");
+            }
+        }
+    }
+
+
 }

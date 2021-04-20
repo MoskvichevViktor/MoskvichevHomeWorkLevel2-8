@@ -54,20 +54,20 @@ public class ClientHandler {
                         // регистрация
                         if (str.startsWith("/signup ")) {
                             //timeout
-                            long start= System.currentTimeMillis();
+                            //long start= System.currentTimeMillis();
 
                             String[] tokens = str.split(" ");
                             int result = AuthService.addUser(tokens[1], tokens[2], tokens[3]);
 
 
-                            long timeoutInMillis = 1000L * 120;
-                            long finish = System.currentTimeMillis();
-                            if((finish-start) < timeoutInMillis){
+                            //long timeoutInMillis = 1000L * 120;
+                           // long finish = System.currentTimeMillis();
+                            /*if((finish-start) < timeoutInMillis){
                                 sendMsg("Время на регистрацию истекло!");
 
                                 socket.isClosed();
                                 break;
-                                }
+                                }*/
 
                             if (result > 0) {
                                 sendMsg("Successful registration");
