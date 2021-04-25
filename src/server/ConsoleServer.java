@@ -8,9 +8,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ConsoleServer {
     private Vector<ClientHandler> users;
+    private ExecutorService clientsExecutorService;
 
     public ConsoleServer() {
         users = new Vector<>();
@@ -18,6 +21,7 @@ public class ConsoleServer {
         Socket socket = null; // удаленная (remote) сторона
 
         try {
+            clientsExecutorService = Executors.newCachedThreadPool();
             AuthService.connect();
             server = new ServerSocket(6001);
             System.out.println("Server started");
@@ -42,6 +46,7 @@ public class ConsoleServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            clientsExecutorService.shutdown();
             AuthService.disconnect();
         }
     }
@@ -100,6 +105,10 @@ public class ConsoleServer {
         for (ClientHandler c : users) {
             c.sendMsg(out);
         }
+    }
+
+    public ExecutorService getClientsExecutorService() {
+        return clientsExecutorService;
     }
 
 }
