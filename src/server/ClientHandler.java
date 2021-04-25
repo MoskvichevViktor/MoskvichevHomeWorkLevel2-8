@@ -30,7 +30,7 @@ public class ClientHandler {
             this.out = new DataOutputStream(socket.getOutputStream());
             //this.blackList = new ArrayList<>();
 
-            new Thread(() -> {
+            server.getClientsExecutorService().execute(() -> {
                 boolean isExit = false;
                 try {
                     while (true) {
@@ -130,7 +130,7 @@ public class ClientHandler {
                     }
                     server.unsubscribe(this);
                 }
-            }).start();
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }
