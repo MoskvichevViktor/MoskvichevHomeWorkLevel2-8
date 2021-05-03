@@ -10,8 +10,12 @@ import java.util.Scanner;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 public class ConsoleServer {
+
+    private  static final Logger LOGGER = Logger.getLogger(String.valueOf(ConsoleServer.class));
+
     private Vector<ClientHandler> users;
     private ExecutorService clientsExecutorService;
 
@@ -25,10 +29,13 @@ public class ConsoleServer {
             AuthService.connect();
             server = new ServerSocket(6001);
             System.out.println("Server started");
+            LOGGER.info ("Server started");
 
             while (true) {
                 socket = server.accept();
                 System.out.printf("Client [%s] try to connect\n", socket.getInetAddress());
+                LOGGER.info ("Client [%s] try to connect\n" +
+                        socket.getInetAddress());
                 new ClientHandler(this, socket);
             }
 
@@ -37,6 +44,7 @@ public class ConsoleServer {
         } finally {
             try {
                 System.out.printf("Client [%s] disconnected", socket.getInetAddress());
+                LOGGER.info ("Client [%s] disconnected" +  socket.getInetAddress());
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -54,12 +62,14 @@ public class ConsoleServer {
     public void subscribe(ClientHandler client) {
         users.add(client);
         System.out.println(String.format("User [%s] connected", client.getNickname()));
+        LOGGER.info ("User [%s] connected" + client.getNickname());
         broadcastClientsList();
     }
 
     public void unsubscribe(ClientHandler client) {
         users.remove(client);
         System.out.println(String.format("User [%s] disconnected", client.getNickname()));
+        LOGGER.info ("User [%s] disconnected" + client.getNickname());
         broadcastClientsList();
     }
 
