@@ -8,9 +8,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 public class ConsoleServer {
+
+    private  static final Logger LOGGER = Logger.getLogger(String.valueOf(ConsoleServer.class));
+
     private Vector<ClientHandler> users;
+    private ExecutorService clientsExecutorService;
 
     public ConsoleServer() {
         users = new Vector<>();
@@ -18,13 +25,17 @@ public class ConsoleServer {
         Socket socket = null; // удаленная (remote) сторона
 
         try {
+            clientsExecutorService = Executors.newCachedThreadPool();
             AuthService.connect();
             server = new ServerSocket(6001);
             System.out.println("Server started");
+            LOGGER.info ("Server started");
 
             while (true) {
                 socket = server.accept();
                 System.out.printf("Client [%s] try to connect\n", socket.getInetAddress());
+                LOGGER.info ("Client [%s] try to connect\n" +
+                        socket.getInetAddress());
                 new ClientHandler(this, socket);
             }
 
@@ -33,6 +44,7 @@ public class ConsoleServer {
         } finally {
             try {
                 System.out.printf("Client [%s] disconnected", socket.getInetAddress());
+                LOGGER.info ("Client [%s] disconnected" +  socket.getInetAddress());
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -42,6 +54,7 @@ public class ConsoleServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            clientsExecutorService.shutdown();
             AuthService.disconnect();
         }
     }
@@ -49,12 +62,14 @@ public class ConsoleServer {
     public void subscribe(ClientHandler client) {
         users.add(client);
         System.out.println(String.format("User [%s] connected", client.getNickname()));
+        LOGGER.info ("User [%s] connected" + client.getNickname());
         broadcastClientsList();
     }
 
     public void unsubscribe(ClientHandler client) {
         users.remove(client);
         System.out.println(String.format("User [%s] disconnected", client.getNickname()));
+        LOGGER.info ("User [%s] disconnected" + client.getNickname());
         broadcastClientsList();
     }
 
@@ -77,14 +92,17 @@ public class ConsoleServer {
 
     public void sendPrivateMsg(ClientHandler nickFrom, String nickTo, String msg) {
         for (ClientHandler c : users) {
-            if (c.getNickname().equals(nickTo)) {
-                if (!nickFrom.getNickname().equals(nickTo)) {
+            //блокировка личных сообщений если пользователь в blacklist
+            if (c.getNickname().equals(nickTo) && nickFrom.checkBlackList(nickFrom.getNickname())) {
+                if (!nickFrom.getNickname().equals(nickTo) ) {
                     c.sendMsg(nickFrom.getNickname() + ": [Send for " + nickTo + "] " + msg);
                     nickFrom.sendMsg(nickFrom.getNickname() + ": [Send for " + nickTo + "] " + msg);
                 }
             }
         }
     }
+
+
 
     private void broadcastClientsList() {
         StringBuilder sb = new StringBuilder();
@@ -97,6 +115,10 @@ public class ConsoleServer {
         for (ClientHandler c : users) {
             c.sendMsg(out);
         }
+    }
+
+    public ExecutorService getClientsExecutorService() {
+        return clientsExecutorService;
     }
 
 }
